@@ -2,18 +2,22 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import s from './ContactForm.module.css';
 import InputField from '../InputField';
+
 const initValue = {
   name: '',
   number: '',
 };
+
 function ContactForm({ onSubmit }) {
   const [value, setValue] = useState(initValue);
 
-  const handleInputChange = (e) => setValue((p) => ({...p, [e.target.name]: e.target.value }));
+  const handleInputChange = (e) => setValue((p) =>
+    ({...p, [e.target.name]: e.target.value }));
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
     onSubmit(value);
+    setValue(initValue)
   };
 
   const { name, number } = value;

@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { nanoid } from 'nanoid';
 import { Notify } from 'notiflix';
 import Section from './Section';
@@ -7,56 +7,50 @@ import Contacts from './Contacts';
 
 const LOCAL_KEY = 'phonebookContacts';
 
-export default class App extends Component {
-  state = {
-    contacts: [],
-  };
+export default function App() {
+  const [contacts, setContacts] = useState([]);
+  const didRender = useRef(false);
+  useEffect(() => {
+    let localContacts = localStorage.getItem(LOCAL_KEY);
+    localContacts = localContacts ? JSON.parse(localContacts) : [];
+    setContacts([...localContacts]);
+  }, []);
 
-  componentDidMount() {
-    let contacts = localStorage.getItem(LOCAL_KEY);
-    contacts = contacts ? JSON.parse(contacts) : [];
-    this.setState({contacts});
-  }
+  useEffect(() => {
+    if (!didRender.current) {
+      didRender.current = true;
+      return;
+    }
+    window.localStorage.setItem(LOCAL_KEY, JSON.stringify(contacts));
+  }, [contacts]);
 
-  componentDidUpdate(prevProps, prevState, snapshot) {
-    if (prevState.contacts === this.state.contacts) return;
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(this.state.contacts));
-  }
-
-  onGetDataForm = (data) => {
-    const hasName = this.state.contacts.some(it => it.name === data.name);
+  const onGetDataForm = (data) => {
+    const hasName = contacts.some(it => it.name === data.name);
     if (hasName) {
       Notify.warning(`Contact "${data.name}" is already exist.`);
       return;
     }
 
-    this.setState(p => ({
-      contacts: [...p.contacts, { ...data, id: nanoid() }]
-    }))
-  }
+    setContacts(p => [...p, { ...data, id: nanoid() }]);
+  };
 
-  deleteItem = (deletedId) => {
-    this.setState(p => ({
-      contacts: p.contacts.filter(({id}) => id !== deletedId)
-    }))
-  }
+  const deleteItem = (deletedId) => {
+    setContacts(p => p.filter(({ id }) => id !== deletedId));
+  };
 
-  render() {
-    const {contacts} = this.state;
-    return (
-      <div>
-        <Section title='Phonebook'>
-          <ContactForm
-            onSubmit={this.onGetDataForm}
-          />
-        </Section>
-        <Section title='Contacts'>
-          <Contacts
-            contacts={contacts}
-            onClickDelete={this.deleteItem}
-          />
-        </Section>
-      </div>
-    );
-  }
+  return (
+    <div>
+      <Section title='Phonebook'>
+        <ContactForm
+          onSubmit={onGetDataForm}
+        />
+      </Section>
+      <Section title='Contacts'>
+        <Contacts
+          contacts={contacts}
+          onClickDelete={deleteItem}
+        />
+      </Section>
+    </div>
+  );
 }
